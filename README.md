@@ -2,6 +2,55 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Environment Variables
+
+Create a `.env.local` file in the root of your project with the following content:
+
+```
+# Privy Authentication
+NEXT_PUBLIC_PRIVY_APP_ID=your-privy-app-id-here
+
+# Biconomy
+NEXT_PUBLIC_BICONOMY_BASE_URL=https://bundler.biconomy.io/api/v3
+NEXT_PUBLIC_BICONOMY_API_KEY=nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44
+```
+
+- Replace `your-privy-app-id-here` with your actual Privy App ID from [privy.io](https://privy.io)
+- The Biconomy API key shown above is an example - replace it with your actual API key from the Biconomy Dashboard
+
+**Note about the Biconomy URL format:**
+The format from Biconomy is usually provided as:
+```
+@https://bundler.biconomy.io/api/v3/{chain-id-here}/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44
+```
+
+We've separated this into:
+1. A base URL: `https://bundler.biconomy.io/api/v3`
+2. The API key: `nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44`
+
+The code dynamically inserts the chain ID based on the current chain being used (e.g., baseSepolia has ID 84532).
+
+**Note:** The `.env.local` file is gitignored by default, which means it won't be committed to your repository. This is intentional as it contains sensitive information.
+
+### Complete Biconomy Nexus Integration
+
+To fully implement the Biconomy Nexus integration:
+
+1. Install ethers.js:
+   ```bash
+   npm install ethers@5.7.2
+   # or
+   yarn add ethers@5.7.2
+   ```
+
+2. Set up a Biconomy account and get your API key from the [Biconomy Dashboard](https://dashboard.biconomy.io)
+
+3. Add the environment variables to your `.env.local` file as shown above
+
+4. Uncomment the production code in `src/app/page.tsx`
+
+### Development Server
+
 First, run the development server:
 
 ```bash
