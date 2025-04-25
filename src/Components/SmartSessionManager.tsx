@@ -129,12 +129,12 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
       console.log('Permission granted:', response);
       setSessionDetails(response);
       
-      // Callback if provided
+      // Callback if provided - pass the entire response object
       if (onSessionCreated) {
         onSessionCreated(response);
       }
 
-      // Save session data to localStorage
+      // Save session data to localStorage - save the complete response
       if (smartAccountAddress) {
         try {
           localStorage.setItem(

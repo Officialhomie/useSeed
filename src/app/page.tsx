@@ -4,13 +4,8 @@ import { useEffect, useState } from 'react';
 import { http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { useWallets, usePrivy } from '@privy-io/react-auth';
-import SmartSessionManager from '@/Components /SmartSessionManager';
-
-interface SessionDetails {
-  redeemerAddress: string;
-  targetContractAddress: string;
-  functionSelector: string;
-}
+import SmartSessionManager from '@/Components/SmartSessionManager';
+import SessionRedemption from '@/Components/SessionRedemption';
 
 export default function Home() {
     const { login, logout, authenticated, user } = usePrivy();
@@ -26,7 +21,7 @@ export default function Home() {
     const [recipientAddress, setRecipientAddress] = useState('');
     const [amount, setAmount] = useState('');
     const [isDarkMode, setIsDarkMode] = useState(false);
-    const [activeTab, setActiveTab] = useState<'wallet' | 'sessions'>('wallet');
+    const [activeTab, setActiveTab] = useState<'wallet' | 'create-sessions' | 'redeem-sessions'>('wallet');
 
     useEffect(() => {
         // Check if user has a theme preference
@@ -152,8 +147,14 @@ export default function Home() {
     };
 
     // Handle session creation
-    const handleSessionCreated = (sessionDetails: SessionDetails) => {
+    const handleSessionCreated = (sessionDetails: any) => {
         console.log('Session created in parent component:', sessionDetails);
+        // You could add additional logic here like showing a success message or switching tabs
+    };
+
+    // Handle session redemption
+    const handleSessionRedeemed = (sessionId: string, success: boolean) => {
+        console.log(`Session ${sessionId} redemption ${success ? 'succeeded' : 'failed'}`);
         // You could add additional logic here like showing a success message
     };
 
@@ -202,7 +203,7 @@ export default function Home() {
                 {authenticated ? (
                     <div className="space-y-4">
                         {/* Tab navigation */}
-                        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                        <div className="flex flex-wrap border-b border-gray-200 dark:border-gray-700 mb-4">
                             <button
                                 className={`py-2 px-4 font-medium border-b-2 ${
                                     activeTab === 'wallet'
@@ -215,17 +216,27 @@ export default function Home() {
                             </button>
                             <button
                                 className={`py-2 px-4 font-medium border-b-2 ${
-                                    activeTab === 'sessions'
+                                    activeTab === 'create-sessions'
                                         ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                                         : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                                 }`}
-                                onClick={() => setActiveTab('sessions')}
+                                onClick={() => setActiveTab('create-sessions')}
                             >
-                                Smart Sessions
+                                Create Sessions
+                            </button>
+                            <button
+                                className={`py-2 px-4 font-medium border-b-2 ${
+                                    activeTab === 'redeem-sessions'
+                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                                }`}
+                                onClick={() => setActiveTab('redeem-sessions')}
+                            >
+                                Redeem Sessions
                             </button>
                         </div>
 
-                        {activeTab === 'wallet' ? (
+                        {activeTab === 'wallet' && (
                             /* Wallet Content */
                             <>
                                 {address && (
@@ -400,9 +411,16 @@ export default function Home() {
                                     </div>
                                 )}
                             </>
-                        ) : (
-                            /* Smart Sessions Content */
+                        )}
+
+                        {activeTab === 'create-sessions' && (
+                            /* Smart Sessions Creation Content */
                             <SmartSessionManager onSessionCreated={handleSessionCreated} />
+                        )}
+
+                        {activeTab === 'redeem-sessions' && (
+                            /* Smart Sessions Redemption Content */
+                            <SessionRedemption onSessionRedeemed={handleSessionRedeemed} />
                         )}
 
                         <div className="mt-6 flex justify-end">
