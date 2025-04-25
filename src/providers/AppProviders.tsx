@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
 import { PrivyProvider } from '@privy-io/react-auth';
+import { BiconomyProvider } from './BiconomyProvider';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -27,8 +28,10 @@ export function AppProviders({ children }: AppProvidersProps) {
       }}
     >
       <QueryClientProvider client={queryClient}>
-        {children}
+        <BiconomyProvider>
+          {children}
+        </BiconomyProvider>
       </QueryClientProvider>
     </PrivyProvider>
   )
-} 
+}

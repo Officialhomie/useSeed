@@ -5,10 +5,9 @@ import { useBiconomy } from '@/providers/BiconomyProvider';
 import { 
   smartSessionActions, 
   getSudoPolicy,
-  ModuleType
+  toSmartSessionsModule
 } from '@biconomy/abstractjs';
 import { usePrivy } from '@privy-io/react-auth';
-import { Hex } from 'viem';
 
 interface SmartSessionManagerProps {
   onSessionCreated?: (sessionDetails: any) => void;
@@ -38,17 +37,15 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
       setIsInstalling(true);
       setError(null);
 
-      // Create a module initialization for the Smart Sessions Module
-      // This format follows the ModuleMeta interface requirements
-      const moduleData = {
-        address: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-        type: ModuleType.SMART_SESSIONS_VALIDATOR, // Using the enum type
-        initData: '0x' as `0x${string}` // Empty init data (can be customized if needed)
-      };
+      // Create the Smart Sessions module using the helper function
+      // This follows the documentation approach
+      const smartSessionsModule = await toSmartSessionsModule({ 
+        signer: nexusClient.account.signer
+      });
       
       // Install the module
       const hash = await nexusClient.installModule({
-        module: moduleData
+        module: smartSessionsModule
       });
       
       console.log('Module installation transaction hash:', hash);

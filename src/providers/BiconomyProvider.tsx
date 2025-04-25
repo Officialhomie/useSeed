@@ -7,7 +7,7 @@ import {
   useState,
   ReactNode,
 } from 'react';
-import { http } from 'viem';
+import { http, TransactionRequest } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import {
   createSmartAccountClient,
@@ -35,6 +35,18 @@ export const useBiconomy = () => useContext(BiconomyContext);
 interface BiconomyProviderProps {
   children: ReactNode;
   rpcUrl?: string;
+}
+
+interface TypedDataDomain {
+  name?: string;
+  version?: string;
+  chainId?: number;
+  verifyingContract?: string;
+  salt?: string;
+}
+
+interface TypedDataTypes {
+  [key: string]: Array<{ name: string; type: string }>;
 }
 
 export function BiconomyProvider({
@@ -75,13 +87,13 @@ export function BiconomyProvider({
               params: [message, embeddedWallet.address],
             }) as Promise<string>;
           },
-          signTransaction: async (transaction: any) => {
+          signTransaction: async (transaction: TransactionRequest) => {
             return provider.request({
               method: 'eth_signTransaction',
               params: [transaction],
             }) as Promise<string>;
           },
-          signTypedData: async (domain: any, types: any, value: any) => {
+          signTypedData: async (domain: TypedDataDomain, types: TypedDataTypes, value: Record<string, unknown>) => {
             return provider.request({
               method: 'eth_signTypedData_v4',
               params: [embeddedWallet.address, JSON.stringify({ domain, types, message: value })],

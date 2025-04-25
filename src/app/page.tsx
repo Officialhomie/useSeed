@@ -3,8 +3,14 @@
 import { useEffect, useState } from 'react';
 import { http } from "viem";
 import { baseSepolia } from "viem/chains";
-import { createSmartAccountClient, NexusClient } from "@biconomy/abstractjs";
 import { useWallets, usePrivy } from '@privy-io/react-auth';
+import SmartSessionManager from '@/Components /SmartSessionManager';
+
+interface SessionDetails {
+  redeemerAddress: string;
+  targetContractAddress: string;
+  functionSelector: string;
+}
 
 export default function Home() {
     const { login, logout, authenticated, user } = usePrivy();
@@ -20,6 +26,7 @@ export default function Home() {
     const [recipientAddress, setRecipientAddress] = useState('');
     const [amount, setAmount] = useState('');
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const [activeTab, setActiveTab] = useState<'wallet' | 'sessions'>('wallet');
 
     useEffect(() => {
         // Check if user has a theme preference
@@ -144,6 +151,12 @@ export default function Home() {
         }
     };
 
+    // Handle session creation
+    const handleSessionCreated = (sessionDetails: SessionDetails) => {
+        console.log('Session created in parent component:', sessionDetails);
+        // You could add additional logic here like showing a success message
+    };
+
     return (
         <main className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
             <div className="max-w-lg mx-auto">
@@ -188,80 +201,208 @@ export default function Home() {
 
                 {authenticated ? (
                     <div className="space-y-4">
-                        {address && (
-                            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                                <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Primary Wallet</h2>
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">Address</label>
-                                        <div className="mt-1 flex items-center">
-                                            <code className="block bg-gray-50 dark:bg-gray-700 p-2 rounded text-sm flex-1 text-gray-900 dark:text-gray-100">
-                                                {formatAddress(address)}
-                                            </code>
-                                            <button
-                                                onClick={() => navigator.clipboard.writeText(address)}
-                                                className="ml-2 p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                                            >
-                                                📋
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        {/* Tab navigation */}
+                        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                            <button
+                                className={`py-2 px-4 font-medium border-b-2 ${
+                                    activeTab === 'wallet'
+                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                                }`}
+                                onClick={() => setActiveTab('wallet')}
+                            >
+                                Wallet Info
+                            </button>
+                            <button
+                                className={`py-2 px-4 font-medium border-b-2 ${
+                                    activeTab === 'sessions'
+                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                                }`}
+                                onClick={() => setActiveTab('sessions')}
+                            >
+                                Smart Sessions
+                            </button>
+                        </div>
 
-                        {embeddedWalletAddress && (
-                            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                                <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Embedded Wallet</h2>
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">Address</label>
-                                        <div className="mt-1 flex items-center">
-                                            <code className="block bg-gray-50 dark:bg-gray-700 p-2 rounded text-sm flex-1 text-gray-900 dark:text-gray-100">
-                                                {formatAddress(embeddedWalletAddress)}
-                                            </code>
-                                            <button
-                                                onClick={() => navigator.clipboard.writeText(embeddedWalletAddress)}
-                                                className="ml-2 p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                                            >
-                                                📋
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {balance && (
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">Balance</label>
-                                            <div className="mt-1">
-                                                <code className="block bg-gray-50 dark:bg-gray-700 p-2 rounded text-sm text-gray-900 dark:text-gray-100">
-                                                    {(parseInt(balance) / 1e18).toFixed(4)} ETH
-                                                </code>
+                        {activeTab === 'wallet' ? (
+                            /* Wallet Content */
+                            <>
+                                {address && (
+                                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                                        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Primary Wallet</h2>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">Address</label>
+                                                <div className="mt-1 flex items-center">
+                                                    <code className="block bg-gray-50 dark:bg-gray-700 p-2 rounded text-sm flex-1 text-gray-900 dark:text-gray-100">
+                                                        {formatAddress(address)}
+                                                    </code>
+                                                    <button
+                                                        onClick={() => navigator.clipboard.writeText(address)}
+                                                        className="ml-2 p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                                                    >
+                                                        📋
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+                                    </div>
+                                )}
 
-                        {smartAccountAddress && (
-                            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                                <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Smart Account</h2>
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">Address</label>
-                                        <div className="mt-1 flex items-center">
-                                            <code className="block bg-gray-50 dark:bg-gray-700 p-2 rounded text-sm flex-1 text-gray-900 dark:text-gray-100">
-                                                {formatAddress(smartAccountAddress)}
-                                            </code>
-                                            <button
-                                                onClick={() => navigator.clipboard.writeText(smartAccountAddress)}
-                                                className="ml-2 p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                                            >
-                                                📋
-                                            </button>
+                                {embeddedWalletAddress && (
+                                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                                        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Embedded Wallet</h2>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">Address</label>
+                                                <div className="mt-1 flex items-center">
+                                                    <code className="block bg-gray-50 dark:bg-gray-700 p-2 rounded text-sm flex-1 text-gray-900 dark:text-gray-100">
+                                                        {formatAddress(embeddedWalletAddress)}
+                                                    </code>
+                                                    <button
+                                                        onClick={() => navigator.clipboard.writeText(embeddedWalletAddress)}
+                                                        className="ml-2 p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                                                    >
+                                                        📋
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {balance && (
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">Balance</label>
+                                                    <div className="mt-1">
+                                                        <code className="block bg-gray-50 dark:bg-gray-700 p-2 rounded text-sm text-gray-900 dark:text-gray-100">
+                                                            {(parseInt(balance) / 1e18).toFixed(4)} ETH
+                                                        </code>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
+                                )}
+
+                                {smartAccountAddress && (
+                                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                                        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Smart Account</h2>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">Address</label>
+                                                <div className="mt-1 flex items-center">
+                                                    <code className="block bg-gray-50 dark:bg-gray-700 p-2 rounded text-sm flex-1 text-gray-900 dark:text-gray-100">
+                                                        {formatAddress(smartAccountAddress)}
+                                                    </code>
+                                                    <button
+                                                        onClick={() => navigator.clipboard.writeText(smartAccountAddress)}
+                                                        className="ml-2 p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                                                    >
+                                                        📋
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                                    <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Connected Wallets</h2>
+                                    <div className="space-y-4">
+                                        {wallets.map((wallet) => (
+                                            <div key={wallet.address} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="font-medium text-gray-900 dark:text-white">{wallet.walletClientType}</p>
+                                                        <code className="text-sm text-gray-600 dark:text-gray-300">
+                                                            {formatAddress(wallet.address)}
+                                                        </code>
+                                                    </div>
+                                                    {wallet.walletClientType === 'privy' && (
+                                                        <span className="px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 rounded-full">
+                                                            Embedded
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+
+                                {authenticated && embeddedWalletAddress && (
+                                    <div className="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                                        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Send Transaction</h2>
+                                        <form onSubmit={handleSendTransaction} className="space-y-4">
+                                            <div>
+                                                <label htmlFor="recipient" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    Recipient Address
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    id="recipient"
+                                                    value={recipientAddress}
+                                                    onChange={(e) => setRecipientAddress(e.target.value)}
+                                                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                    placeholder="0x..."
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    Amount (ETH)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    id="amount"
+                                                    value={amount}
+                                                    onChange={(e) => setAmount(e.target.value)}
+                                                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                    placeholder="0.0"
+                                                    step="0.0001"
+                                                    min="0"
+                                                    required
+                                                />
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                disabled={isLoading || txStatus === 'pending'}
+                                                className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {isLoading ? (
+                                                    <>
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                                        Sending...
+                                                    </>
+                                                ) : (
+                                                    'Send Transaction'
+                                                )}
+                                            </button>
+                                        </form>
+
+                                        {txStatus === 'success' && txHash && (
+                                            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/50 text-green-700 dark:text-green-200 rounded-lg">
+                                                <p className="font-medium">Transaction Successful!</p>
+                                                <a
+                                                    href={`https://sepolia.basescan.org/tx/${txHash}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-sm underline mt-1 block"
+                                                >
+                                                    View on BaseScan
+                                                </a>
+                                            </div>
+                                        )}
+
+                                        {txStatus === 'error' && error && (
+                                            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/50 text-red-700 dark:text-red-200 rounded-lg">
+                                                <p className="font-medium">Transaction Failed</p>
+                                                <p className="text-sm mt-1">{error}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            /* Smart Sessions Content */
+                            <SmartSessionManager onSessionCreated={handleSessionCreated} />
                         )}
 
                         <div className="mt-6 flex justify-end">
@@ -284,104 +425,6 @@ export default function Home() {
                         <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
                             Connect your wallet to get started with Biconomy Nexus
                         </p>
-                    </div>
-                )}
-
-                {authenticated && (
-                    <div className="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Connected Wallets</h2>
-                        <div className="space-y-4">
-                            {wallets.map((wallet) => (
-                                <div key={wallet.address} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="font-medium text-gray-900 dark:text-white">{wallet.walletClientType}</p>
-                                            <code className="text-sm text-gray-600 dark:text-gray-300">
-                                                {formatAddress(wallet.address)}
-                                            </code>
-                                        </div>
-                                        {wallet.walletClientType === 'privy' && (
-                                            <span className="px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 rounded-full">
-                                                Embedded
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {authenticated && embeddedWalletAddress && (
-                    <div className="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Send Transaction</h2>
-                        <form onSubmit={handleSendTransaction} className="space-y-4">
-                            <div>
-                                <label htmlFor="recipient" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Recipient Address
-                                </label>
-                                <input
-                                    type="text"
-                                    id="recipient"
-                                    value={recipientAddress}
-                                    onChange={(e) => setRecipientAddress(e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                    placeholder="0x..."
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Amount (ETH)
-                                </label>
-                                <input
-                                    type="number"
-                                    id="amount"
-                                    value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                    placeholder="0.0"
-                                    step="0.0001"
-                                    min="0"
-                                    required
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={isLoading || txStatus === 'pending'}
-                                className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isLoading ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                        Sending...
-                                    </>
-                                ) : (
-                                    'Send Transaction'
-                                )}
-                            </button>
-                        </form>
-
-                        {txStatus === 'success' && txHash && (
-                            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/50 text-green-700 dark:text-green-200 rounded-lg">
-                                <p className="font-medium">Transaction Successful!</p>
-                                <a
-                                    href={`https://sepolia.basescan.org/tx/${txHash}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm underline mt-1 block"
-                                >
-                                    View on BaseScan
-                                </a>
-                            </div>
-                        )}
-
-                        {txStatus === 'error' && error && (
-                            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/50 text-red-700 dark:text-red-200 rounded-lg">
-                                <p className="font-medium">Transaction Failed</p>
-                                <p className="text-sm mt-1">{error}</p>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
