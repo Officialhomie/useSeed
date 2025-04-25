@@ -2,7 +2,11 @@
 
 import { useState } from 'react';
 import { useBiconomy } from '@/providers/BiconomyProvider';
-import { smartSessionActions, getSudoPolicy } from '@biconomy/abstractjs';
+import { 
+  smartSessionActions, 
+  getSudoPolicy,
+  ModuleType
+} from '@biconomy/abstractjs';
 import { usePrivy } from '@privy-io/react-auth';
 import { Hex } from 'viem';
 
@@ -34,11 +38,12 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
       setIsInstalling(true);
       setError(null);
 
-      // Create a minimal module initialization for the Smart Sessions Module
-      // This is just the basic structure - in production you would use a proper module initialization
+      // Create a module initialization for the Smart Sessions Module
+      // This format follows the ModuleMeta interface requirements
       const moduleData = {
         address: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-        type: 'Smart Sessions Module'
+        type: ModuleType.SMART_SESSIONS_VALIDATOR, // Using the enum type
+        initData: '0x' as `0x${string}` // Empty init data (can be customized if needed)
       };
       
       // Install the module
@@ -65,6 +70,30 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
     }
   };
 
+  // Validates input fields
+  const validateInputs = () => {
+    // Check if addresses are properly formatted
+    const addressRegex = /^0x[a-fA-F0-9]{40}$/;
+    const selectorRegex = /^(0x)?[a-fA-F0-9]{8}$/;
+    
+    if (!redeemerAddress || !addressRegex.test(redeemerAddress)) {
+      setError('Please enter a valid Ethereum address for the redeemer');
+      return false;
+    }
+    
+    if (!targetContractAddress || !addressRegex.test(targetContractAddress)) {
+      setError('Please enter a valid Ethereum address for the target contract');
+      return false;
+    }
+    
+    if (!functionSelector || !selectorRegex.test(functionSelector)) {
+      setError('Please enter a valid function selector (e.g., 0x273ea3e3)');
+      return false;
+    }
+    
+    return true;
+  };
+
   // Grant permission to a redeemer address
   const grantPermission = async () => {
     if (!nexusClient || !isModuleInstalled) {
@@ -72,14 +101,18 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
       return;
     }
 
-    if (!redeemerAddress || !targetContractAddress || !functionSelector) {
-      setError('Please fill in all fields: redeemer address, target contract address, and function selector');
+    if (!validateInputs()) {
       return;
     }
 
     try {
       setIsGranting(true);
       setError(null);
+
+      // Format function selector with 0x prefix if needed
+      const formattedSelector = functionSelector.startsWith('0x') 
+        ? functionSelector as `0x${string}` 
+        : `0x${functionSelector}` as `0x${string}`;
 
       // Extend the client with Smart Sessions actions
       const nexusSessionClient = nexusClient.extend(smartSessionActions());
@@ -90,9 +123,7 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
         actions: [
           {
             actionTarget: targetContractAddress as `0x${string}`,
-            actionTargetSelector: functionSelector.startsWith('0x') ? 
-              functionSelector as `0x${string}` : 
-              `0x${functionSelector}` as `0x${string}`,
+            actionTargetSelector: formattedSelector,
             actionPolicies: [getSudoPolicy()] // Using sudo policy which grants full access for this function
           }
         ]
@@ -108,7 +139,15 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
 
       // Save session data to localStorage
       if (smartAccountAddress) {
-        localStorage.setItem(`session_${smartAccountAddress}_${redeemerAddress}`, JSON.stringify(response));
+        try {
+          localStorage.setItem(
+            `session_${smartAccountAddress}_${redeemerAddress}`, 
+            JSON.stringify(response)
+          );
+        } catch (storageError) {
+          console.warn('Failed to save session to localStorage:', storageError);
+          // Non-critical error, don't show to user
+        }
       }
       
     } catch (err) {
@@ -117,6 +156,14 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
     } finally {
       setIsGranting(false);
     }
+  };
+
+  // Reset form and errors
+  const resetForm = () => {
+    setRedeemerAddress('');
+    setTargetContractAddress('');
+    setFunctionSelector('');
+    setError(null);
   };
 
   if (isInitializing) {
@@ -145,13 +192,19 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
       {error && (
         <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/50 text-red-700 dark:text-red-200 rounded-lg">
           <p>{error}</p>
+          <button 
+            onClick={() => setError(null)}
+            className="mt-1 text-xs text-red-700 dark:text-red-200 underline"
+          >
+            Dismiss
+          </button>
         </div>
       )}
       
       {smartAccountAddress && (
         <div className="mb-4">
           <div className="text-sm font-medium text-gray-600 dark:text-gray-300">Your Smart Account Address:</div>
-          <code className="block bg-gray-50 dark:bg-gray-700 p-2 rounded text-sm text-gray-900 dark:text-gray-100 mt-1">
+          <code className="block bg-gray-50 dark:bg-gray-700 p-2 rounded text-sm text-gray-900 dark:text-gray-100 mt-1 overflow-auto">
             {smartAccountAddress}
           </code>
         </div>
@@ -183,7 +236,7 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
           <div className="space-y-4">
             <div>
               <label htmlFor="redeemer" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Redeemer Address
+                Redeemer Address <span className="text-red-500">*</span>
               </label>
               <input
                 id="redeemer"
@@ -193,11 +246,14 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
                 placeholder="0x..."
                 className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                The Ethereum address that will be authorized to use this session
+              </p>
             </div>
             
             <div>
               <label htmlFor="targetContract" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Target Contract Address
+                Target Contract Address <span className="text-red-500">*</span>
               </label>
               <input
                 id="targetContract"
@@ -207,11 +263,14 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
                 placeholder="0x..."
                 className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                The contract address that the redeemer is allowed to interact with
+              </p>
             </div>
             
             <div>
               <label htmlFor="functionSelector" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Function Selector
+                Function Selector <span className="text-red-500">*</span>
               </label>
               <input
                 id="functionSelector"
@@ -222,24 +281,34 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
                 className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Example: 0x273ea3e3 for increment()
+                The function selector the redeemer can call (e.g., 0x273ea3e3 for increment())
               </p>
             </div>
             
-            <button
-              onClick={grantPermission}
-              disabled={isGranting || !nexusClient}
-              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGranting ? (
-                <span className="flex items-center justify-center">
-                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
-                  Granting Permission...
-                </span>
-              ) : (
-                'Grant Permission'
-              )}
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={grantPermission}
+                disabled={isGranting || !nexusClient}
+                className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGranting ? (
+                  <span className="flex items-center justify-center">
+                    <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                    Granting Permission...
+                  </span>
+                ) : (
+                  'Grant Permission'
+                )}
+              </button>
+              
+              <button
+                onClick={resetForm}
+                disabled={isGranting}
+                className="py-2 px-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Reset
+              </button>
+            </div>
           </div>
           
           {sessionDetails && (

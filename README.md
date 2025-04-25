@@ -10,23 +10,12 @@ Create a `.env.local` file in the root of your project with the following conten
 # Privy Authentication
 NEXT_PUBLIC_PRIVY_APP_ID=your-privy-app-id-here
 
-# Biconomy
-NEXT_PUBLIC_BICONOMY_BASE_URL=https://bundler.biconomy.io/api/v3
-NEXT_PUBLIC_BICONOMY_API_KEY=nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44
+
 ```
 
 - Replace `your-privy-app-id-here` with your actual Privy App ID from [privy.io](https://privy.io)
 - The Biconomy API key shown above is an example - replace it with your actual API key from the Biconomy Dashboard
 
-**Note about the Biconomy URL format:**
-The format from Biconomy is usually provided as:
-```
-@https://bundler.biconomy.io/api/v3/{chain-id-here}/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44
-```
-
-We've separated this into:
-1. A base URL: `https://bundler.biconomy.io/api/v3`
-2. The API key: `nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44`
 
 The code dynamically inserts the chain ID based on the current chain being used (e.g., baseSepolia has ID 84532).
 
