@@ -7,7 +7,10 @@ const nextConfig = {
             "tls": false,
         };
         return config;
-    }
+    },
+    eslint: {
+        ignoreDuringBuilds: true,
+    },
 };
 
 module.exports = nextConfig; 

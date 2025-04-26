@@ -7,12 +7,17 @@ import { SmartSession } from '@/models/SmartSession';
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID || '';
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET || '';
 
+// Helper function to extract the ID from the URL
+function getIdFromUrl(url: string): string {
+  const pathParts = new URL(url).pathname.split('/');
+  return pathParts[pathParts.length - 1]; // Get the ID from the path
+}
+
 // GET handler to fetch a specific session by ID
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: NextRequest) {
   try {
+    const id = getIdFromUrl(req.url);
+    
     // Authenticate the user with Privy
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
@@ -39,7 +44,7 @@ export async function GET(
       await dbConnect();
 
       // Fetch the session by ID
-      const session = await SmartSession.findById(params.id);
+      const session = await SmartSession.findById(id);
       if (!session) {
         return NextResponse.json({ error: 'Session not found' }, { status: 404 });
       }
@@ -60,11 +65,10 @@ export async function GET(
 }
 
 // PUT handler to update session status (revoke, update limits, etc.)
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(req: NextRequest) {
   try {
+    const id = getIdFromUrl(req.url);
+    
     // Authenticate the user with Privy
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
@@ -91,7 +95,7 @@ export async function PUT(
       await dbConnect();
 
       // Fetch the session by ID
-      const session = await SmartSession.findById(params.id);
+      const session = await SmartSession.findById(id);
       if (!session) {
         return NextResponse.json({ error: 'Session not found' }, { status: 404 });
       }
@@ -136,11 +140,10 @@ export async function PUT(
 }
 
 // DELETE handler to delete a session
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: NextRequest) {
   try {
+    const id = getIdFromUrl(req.url);
+    
     // Authenticate the user with Privy
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
@@ -167,7 +170,7 @@ export async function DELETE(
       await dbConnect();
 
       // Fetch the session by ID
-      const session = await SmartSession.findById(params.id);
+      const session = await SmartSession.findById(id);
       if (!session) {
         return NextResponse.json({ error: 'Session not found' }, { status: 404 });
       }
@@ -178,7 +181,7 @@ export async function DELETE(
       }
 
       // Delete the session
-      await SmartSession.findByIdAndDelete(params.id);
+      await SmartSession.findByIdAndDelete(id);
 
       return NextResponse.json({ 
         message: 'Session deleted successfully' 

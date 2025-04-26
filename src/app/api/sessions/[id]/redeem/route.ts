@@ -9,10 +9,14 @@ const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET || '';
 
 // POST handler to record the redemption of a session
 export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  req: NextRequest
 ) {
   try {
+    // Extract the ID from the URL path
+    const url = new URL(req.url);
+    const pathParts = url.pathname.split('/');
+    const id = pathParts[pathParts.length - 2]; // Get the ID from the path
+    
     // Authenticate the user with Privy
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
@@ -47,7 +51,7 @@ export async function POST(
       await dbConnect();
 
       // Fetch the session by ID
-      const session = await SmartSession.findById(params.id);
+      const session = await SmartSession.findById(id);
       if (!session) {
         return NextResponse.json({ error: 'Session not found' }, { status: 404 });
       }
