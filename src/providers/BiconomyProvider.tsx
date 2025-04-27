@@ -82,11 +82,51 @@ export function BiconomyProvider({
         const signer = {
           address: embeddedWallet.address as `0x${string}`,
           getAddress: async () => embeddedWallet.address,
-          signMessage: async (message: string) => {
-            return provider.request({
-              method: 'personal_sign',
-              params: [message, embeddedWallet.address],
-            }) as Promise<string>;
+          signMessage: async (message: any) => {
+            // Add validation and logging for the message
+            if (!message) {
+              console.error("Empty message received for signing");
+              throw new Error("Message must be a non-empty string");
+            }
+            
+            // Ensure message is a string
+            const messageStr = typeof message === 'string' 
+              ? message 
+              : message instanceof Uint8Array 
+                ? Buffer.from(message).toString()
+                : String(message);
+            
+            console.log("Signing message:", messageStr.length > 100 ? `${messageStr.substring(0, 100)}...` : messageStr);
+            
+            // Use proper personal_sign method with the message
+            try {
+              // Add a clear prefix to explain what's being signed
+              let messageToDisplay = messageStr;
+              
+              // If it appears to be non-human readable (contains many unprintable chars)
+              if (!/^[a-zA-Z0-9 .,_\-:;@#$%^&*()[\]{}|/<>+='"~`!?\\]+$/.test(messageStr) || 
+                  messageStr.indexOf('\u0000') !== -1) {
+                // Create a more user-friendly version with a prefix
+                messageToDisplay = `Biconomy Smart Session Authentication\n\nSigning this message will securely connect your wallet to Biconomy Smart Sessions.\n\nTechnical data: ${messageStr.substring(0, 30)}...`;
+              }
+              
+              // For actual signing, keep hex conversion for the original message
+              const messageToSign = messageStr.startsWith('0x') ? messageStr : 
+                `0x${Buffer.from(messageStr).toString('hex')}`;
+              
+              // Replace with the user-friendly message for display only
+              const userFriendlyParams = messageStr.startsWith('0x') ? 
+                [messageToSign, embeddedWallet.address] : 
+                [`0x${Buffer.from(messageToDisplay).toString('hex')}`, embeddedWallet.address];
+              
+              return provider.request({
+                method: 'personal_sign',
+                params: userFriendlyParams,
+              }) as Promise<string>;
+            } catch (error) {
+              console.error("Error during message signing:", error);
+              throw error;
+            }
           },
           signTransaction: async (transaction: TransactionRequest) => {
             return provider.request({

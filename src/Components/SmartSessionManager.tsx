@@ -33,33 +33,42 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
       setError('Nexus client not initialized');
       return;
     }
-
+  
     try {
       setIsInstalling(true);
       setError(null);
-
-      // Use the proper module creation approach
+  
+      console.log("Creating Smart Sessions module...");
+      
+      // Create a module initialization for the Smart Sessions Module
       const smartSessionsModule = await toSmartSessionsModule({ 
         signer: nexusClient.account.signer as Signer
-      } as any);
+      });
       
-      console.log('Module created:', smartSessionsModule);
+      console.log("Smart Sessions module created:", smartSessionsModule);
       
-      // Install the module
+      // Install the module with enhanced error handling
+      console.log("Installing module...");
       const hash = await nexusClient.installModule({
         module: smartSessionsModule
+      }).catch(err => {
+        console.error("Installation error details:", err);
+        throw err;
       });
       
       console.log('Module installation transaction hash:', hash);
       
       // Wait for the transaction to be mined
-      const { success } = await nexusClient.waitForUserOperationReceipt({ hash });
+      const receipt = await nexusClient.waitForUserOperationReceipt({ hash });
       
-      if (success) {
+      console.log("Installation receipt:", receipt);
+      
+      if (receipt.success) {
         console.log('Smart Sessions module installed successfully');
         setIsModuleInstalled(true);
       } else {
-        throw new Error('Failed to install Smart Sessions module');
+        throw new Error('Failed to install Smart Sessions module: ' + 
+          (receipt.reason || 'Unknown error'));
       }
     } catch (err) {
       console.error('Error installing Smart Sessions module:', err);
