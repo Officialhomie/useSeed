@@ -1,0 +1,7 @@
+# Corrected Biconomy Configuration
+NEXT_PUBLIC_BUNDLER_URL=https://bundler.biconomy.io/api/v3/84532/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44
+NEXT_PUBLIC_BICONOMY_API_KEY=https://paymaster.biconomy.io/api/v2/84532/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44
+
+# The issue was:
+# 1. The bundler URL was using "bundler_3ZLa6hJxvwhpuH5oyxvuMmPW" instead of your actual API key
+# 2. The API key should be a full paymaster URL, not just a key 

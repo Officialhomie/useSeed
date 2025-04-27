@@ -41,7 +41,7 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
       // Use the proper module creation approach
       const smartSessionsModule = await toSmartSessionsModule({ 
         signer: nexusClient.account.signer as Signer
-      });
+      } as any);
       
       console.log('Module created:', smartSessionsModule);
       

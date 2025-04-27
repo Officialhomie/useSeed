@@ -121,9 +121,6 @@ export function BiconomyProvider({
         const client = await createSmartAccountClient({
           account: nexusAccount,
           transport: http(bundlerUrl),
-          paymaster: apiKey ? createBicoPaymasterClient({
-            paymasterUrl: apiKey
-          }) : undefined
         });
 
         const accountAddress = await client.account.address;
