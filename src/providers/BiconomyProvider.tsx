@@ -13,6 +13,7 @@ import {
   createSmartAccountClient,
   toNexusAccount,
   NexusClient,
+  createBicoPaymasterClient
 } from '@biconomy/abstractjs';
 import { useWallets, usePrivy } from '@privy-io/react-auth';
 
@@ -109,10 +110,20 @@ export function BiconomyProvider({
           transport: http(rpcUrl),
         });
 
+        const bundlerUrl = process.env.NEXT_PUBLIC_BUNDLER_URL;
+        const apiKey = process.env.NEXT_PUBLIC_BICONOMY_API_KEY;
+
+        if (!bundlerUrl || !apiKey) {
+          throw new Error('Bundler URL or API key is not set');
+        }
+
         // Create Smart Account Client
         const client = await createSmartAccountClient({
           account: nexusAccount,
-          transport: http(rpcUrl),
+          transport: http(bundlerUrl),
+          paymaster: apiKey ? createBicoPaymasterClient({
+            paymasterUrl: apiKey
+          }) : undefined
         });
 
         const accountAddress = await client.account.address;

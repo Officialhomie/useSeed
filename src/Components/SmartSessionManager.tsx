@@ -5,7 +5,8 @@ import { useBiconomy } from '@/providers/BiconomyProvider';
 import { 
   smartSessionActions, 
   getSudoPolicy,
-  toSmartSessionsModule
+  toSmartSessionsModule,
+  Signer
 } from '@biconomy/abstractjs';
 import { usePrivy } from '@privy-io/react-auth';
 
@@ -37,11 +38,12 @@ export default function SmartSessionManager({ onSessionCreated }: SmartSessionMa
       setIsInstalling(true);
       setError(null);
 
-      // Create the Smart Sessions module using the helper function
-      // This follows the documentation approach
+      // Use the proper module creation approach
       const smartSessionsModule = await toSmartSessionsModule({ 
-        signer: nexusClient.account.signer
+        signer: nexusClient.account.signer as Signer
       });
+      
+      console.log('Module created:', smartSessionsModule);
       
       // Install the module
       const hash = await nexusClient.installModule({
